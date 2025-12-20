@@ -1,27 +1,22 @@
 class Cache:
-    def __init__(self, capacity):
+    def __init__(self, capacity, policy):
         self.capacity = capacity
-        self.container = []   # cache storage (MRU at index 0)
+        self.container = []
+        self.policy = policy
 
     def access(self, item):
-        # Case 1: Cache HIT
         if item in self.container:
-            # Update recency
-            self.container.remove(item)
-            self.container.insert(0, item)
+            self.policy.update_recency(self.container, item)
             return "Hit"
 
-        # Case 2: Cache MISS
-        if len(self.container) >= self.capacity:
-            victim = self.evict()
-            self.container.insert(0, item)
-            return f"Miss, evicted {victim}"
+        victim = None
+        if len(self.container) == self.capacity:
+            victim = self._evict()
 
-        # Case 3: Miss but space available
-        self.container.insert(0, item)
-        return "Miss, added without eviction"
+        self.container.append(item)
+        return f"Miss, evicted {victim}"
 
-    def evict(self):
-        # LRU eviction = remove last element
-        return self.container.pop()
-
+    def _evict(self):
+        victim = self.policy.find_victim(self.container)
+        self.container.remove(victim)
+        return victim
